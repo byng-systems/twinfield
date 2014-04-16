@@ -88,7 +88,39 @@ class BrowseFactory extends ParentFactory
             
             if ($response->isSuccessful()) {
                 $response->getResponseDocument()->formatOutput = true;
-                return $response->getResponseDocument();
+                $responseDocument = $response->getResponseDocument();
+
+                // Munge to SimpleXML
+                $xmlResponse = new SimpleXMLElement($responseDocument->saveXML());
+
+                // Get all the data rows out
+                $data = array();
+                foreach($xmlResponse->xpath("tr") as $xmlRow) {
+                    $dataRow = array();
+                    foreach ($xmlRow->xpath("td") as $value) {
+                        $dataRow[] = (string) $value;
+                    }
+                    $data[] = $dataRow;
+                }
+
+                // Get the key labels out
+                $keys = array();
+                foreach ($xmlResponse->xpath("th/td") as $header) {
+                    $keys[] = (string) $header->attributes()->label;
+                }
+
+                // Convert from CSV style to indexed arrays
+                $rotated = array();
+                foreach ($data as $xmlRow) {
+                    $dataRow = array();
+                    foreach ($xmlRow as $index => $value) {
+                        $dataRow[$keys[$index]] = $value;
+                    }
+                    $rotated[] = (object) $dataRow;
+                }
+
+
+                return $rotated;
             }
         }
     }
