@@ -84,8 +84,6 @@ class BrowseFactory extends ParentFactory
             $finalDocument->documentElement->appendChild(new DOMAttr("code", $code));
             $finalDocument->formatOutput = true;
             
-            file_put_contents("c:/www/tmp/request.xml", $finalDocument->saveXML());
-            
             $response = $this->getService()->send($finalDocument);
             
             if ($response->isSuccessful()) {
