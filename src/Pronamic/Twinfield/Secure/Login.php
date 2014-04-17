@@ -25,7 +25,7 @@ use Pronamic\Twinfield\SoapClient;
  * @copyright (c) 2013, Leon Rowland
  * @version 0.0.1
  */
-class Login
+class Login extends AbstractAuthenticationHandler
 {
     protected $loginWSDL    = 'https://login.twinfield.com/webservices/session.asmx?wsdl';
     protected $clusterWSDL  = '%s/webservices/processxml.asmx?wsdl';
@@ -38,14 +38,6 @@ class Login
      * @var Pronamic\Twinfield\Secure\Config
      */
     private $config;
-
-    /**
-     * The SoapClient used to login to Twinfield
-     *
-     * @access private
-     * @var SoapClient
-     */
-    private $soapLoginClient;
 
     /**
      * The response from the login client, when
@@ -86,8 +78,12 @@ class Login
     {
         $this->config = $config;
 
-        $this->soapLoginClient = new SoapClient($this->loginWSDL,
-            array('trace' => 1));
+        parent::__construct(
+            new SoapClient(
+                $this->loginWSDL,
+                array('trace' => 1)
+            )
+        );
     }
 
     /**
@@ -104,12 +100,12 @@ class Login
     public function process()
     {
         // Process logon
-        $response = $this->soapLoginClient->Logon($this->config->getCredentials());
+        $response = $this->authenticationSoapClient->Logon($this->config->getCredentials());
 
         // Check response is successful
         if('Ok' == $response->LogonResult) {
             // Response from the logon request
-            $this->loginResponse = $this->soapLoginClient->__getLastResponse();
+            $this->loginResponse = $this->authenticationSoapClient->__getLastResponse();
 
             // Make a new DOM and load the response XML
             $envelope = new \DOMDocument();
