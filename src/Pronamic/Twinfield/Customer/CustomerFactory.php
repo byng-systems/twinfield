@@ -1,7 +1,7 @@
 <?php
 namespace Pronamic\Twinfield\Customer;
 
-use \Pronamic\Twinfield\Factory\ParentFactory;
+use \Pronamic\Twinfield\Factory\ProcessXmlRequestFactory;
 use \Pronamic\Twinfield\Customer\Mapper\CustomerMapper;
 use \Pronamic\Twinfield\Request as Request;
 
@@ -24,7 +24,7 @@ use \Pronamic\Twinfield\Request as Request;
  * @copyright (c) 2013, Pronamic
  * @version 0.0.1
  */
-class CustomerFactory extends ParentFactory
+class CustomerFactory extends ProcessXmlRequestFactory
 {
     /**
      * Requests a specific customer based off the passed in code

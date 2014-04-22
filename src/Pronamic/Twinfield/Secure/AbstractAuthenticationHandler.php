@@ -8,10 +8,10 @@
 
 namespace Pronamic\Twinfield\Secure;
 
-
 use Pronamic\Twinfield\SoapClient;
 
-abstract class AbstractAuthenticationHandler {
+abstract class AbstractAuthenticationHandler
+{
 
     /**
      * The SoapClient used to login to Twinfield
@@ -19,13 +19,31 @@ abstract class AbstractAuthenticationHandler {
      * @var SoapClient
      */
     protected $authenticationSoapClient;
+
+    /**
+     * @var \Pronamic\Twinfield\Secure\Config
+     */
     protected $config;
 
-    public function __construct(SoapClient $authenticationSoapClient) {
+    /**
+     * [__construct description]
+     * 
+     * @param \Pronamic\Twinfield\SoapClient $authenticationSoapClient
+     */
+    public function __construct(SoapClient $authenticationSoapClient)
+    {
         $this->authenticationSoapClient = $authenticationSoapClient;
     }
 
-    abstract function setConfig(Config $config);
+    /**
+     * [setConfig description]
+     * 
+     * @param \Pronamic\Twinfield\Secure\ConfigInterface $config
+     */
+    public function setConfig(ConfigInterface $config)
+    {
+        $this->config = $config;
+    }
 
     abstract function process();
 

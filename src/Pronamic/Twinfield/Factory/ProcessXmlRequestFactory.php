@@ -1,10 +1,12 @@
 <?php
 namespace Pronamic\Twinfield\Factory;
 
-use \Pronamic\Twinfield\Secure\Config;
-use \Pronamic\Twinfield\Secure\Login;
-use \Pronamic\Twinfield\Secure\Service;
-use \Pronamic\Twinfield\Response\Response;
+use Pronamic\Twinfield\Secure\Config;
+use Pronamic\Twinfield\Secure\Login;
+use Pronamic\Twinfield\Service\AbstractService;
+use Pronamic\Twinfield\Service\ProcessXmlRequestService;
+use Pronamic\Twinfield\Response\Response;
+use Pronamic\Twinfield\Secure\SessionLoginHandler;
 
 /**
  * All Factories used by all components extend this factory for common
@@ -14,19 +16,19 @@ use \Pronamic\Twinfield\Response\Response;
  * 
  * @author Leon Rowland <leon@rowland.nl>
  */
-abstract class ParentFactory
+class ProcessXmlRequestFactory
 {
     /**
      * Holds the secure config class
      * 
      * @var \Pronamic\Twinfield\Secure\Config
      */
-    private $config;
+    protected $config;
 
     /**
      * Holds the secure login class
      * 
-     * @var \Pronamic\Twinfield\Secure\Login
+     * @var \Pronamic\Twinfield\Secure\SessionLoginHandler
      */
     private $login;
 
@@ -37,9 +39,11 @@ abstract class ParentFactory
      */
     private $response;
 
+    protected $processXmlRequestService;
+
     /**
      * Pass in the Secure\Config class and it will automatically
-     * make the Secure\Login for you.
+     * make the Secure\SessionLoginHandler for you.
      * 
      * @access public
      * @param \Pronamic\Twinfield\Secure\Config $config
@@ -49,6 +53,10 @@ abstract class ParentFactory
         $this->setConfig($config);
         $this->makeLogin();
     }
+    // public function __construct(ProcessXmlRequestService $processXmlRequestService)
+    // {
+    //     $this->processXmlRequestService = $processXmlRequestService;
+    // }
 
     /**
      * Sets the config class for usage in this factory
@@ -86,14 +94,14 @@ abstract class ParentFactory
      */
     public function makeLogin()
     {
-        return $this->login = new Login($this->getConfig());
+        return $this->login = new SessionLoginHandler($this->getConfig());
     }
 
     /**
      * Returns this instances associated login instance.
      * 
      * @access public
-     * @return \Pronamic\Twinfield\Secure\Login
+     * @return \Pronamic\Twinfield\Secure\SessionLoginHandler
      */
     public function getLogin()
     {
@@ -102,14 +110,14 @@ abstract class ParentFactory
 
     /**
      * Returns an new instance of Service with 
-     * the already prepared Secure\Login.
+     * the already prepared Secure\SessionLoginHandler.
      * 
      * @access public
      * @return \Pronamic\Twinfield\Secure\Service
      */
     public function getService()
     {
-        return new Service($this->getLogin());
+        return new ProcessXmlRequestService($this->getLogin());
     }
 
     /**

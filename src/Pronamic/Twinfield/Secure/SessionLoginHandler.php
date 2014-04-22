@@ -25,7 +25,7 @@ use Pronamic\Twinfield\SoapClient;
  * @copyright (c) 2013, Leon Rowland
  * @version 0.0.1
  */
-class Login extends AbstractAuthenticationHandler
+class SessionLoginHandler extends AbstractAuthenticationHandler
 {
     protected $loginWSDL    = 'https://login.twinfield.com/webservices/session.asmx?wsdl';
     protected $clusterWSDL  = '%s/webservices/processxml.asmx?wsdl';
@@ -37,7 +37,7 @@ class Login extends AbstractAuthenticationHandler
      * @access private
      * @var Pronamic\Twinfield\Secure\Config
      */
-    private $config;
+    protected $config;
 
     /**
      * The response from the login client, when

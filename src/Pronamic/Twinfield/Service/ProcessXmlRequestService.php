@@ -1,7 +1,9 @@
 <?php
-namespace Pronamic\Twinfield\Secure;
+namespace Pronamic\Twinfield\Service;
 
-use \Pronamic\Twinfield\Response\Response;
+use Pronamic\Twinfield\Response\Response;
+use DOMDocument;
+use Pronamic\Twinfield\Secure\SessionLoginHandler;
 
 /**
  * Service Class
@@ -24,7 +26,7 @@ use \Pronamic\Twinfield\Response\Response;
  * @copyright (c) 2013, Leon Rowland
  * @version 0.0.1
  */
-class Service
+class ProcessXmlRequestService extends AbstractService
 {
     /**
      * Holds the login class for this service
@@ -51,7 +53,12 @@ class Service
      */
     private $response;
 
-    public function __construct(Login $login)
+    /**
+     * [__construct description]
+     * 
+     * @param \Pronamic\Twinfield\Secure\SessionLoginHandler $login
+     */
+    public function __construct(SessionLoginHandler $login)
     {
         $this->login = $login;
     }
@@ -60,12 +67,13 @@ class Service
      * Sets the login class for this secure service
      *
      * @since 0.0.1
-     *
      * @access public
-     * @param \Pronamic\Twinfield\Secure\Login $login
+     * 
+     * @param \Pronamic\Twinfield\Secure\SessionLoginHandler $login
+     * 
      * @return void
      */
-    public function setLogin(Login $login)
+    public function setLogin(SessionLoginHandler $login)
     {
         $this->login = $login;
     }
@@ -82,7 +90,7 @@ class Service
      * @param Document $document A class that extended Secure\Document
      * @return \DOMDocument The response from the request
      */
-    public function send(\DOMDocument $document)
+    public function send(DOMDocument $document)
     {
         // Get the secureclient and send this documents xml
         $this->result = $this->login->getClient()->ProcessXmlString(array(
@@ -90,7 +98,7 @@ class Service
         ));
 
         // Make a new DOMDocument, and load the response into it
-        $this->response = new \DOMDocument();
+        $this->response = new DOMDocument();
         $this->response->loadXML($this->result->ProcessXmlStringResult);
 
         return new Response($this->response);
