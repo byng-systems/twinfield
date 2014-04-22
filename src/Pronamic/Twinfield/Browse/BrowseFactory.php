@@ -15,9 +15,10 @@ use DOMAttr;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
+use SimpleXMLElement;
 use Pronamic\Twinfield\Factory\ParentFactory;
 use Pronamic\Twinfield\Request\Read as Read;
-
+use Pronamic\Twinfield\Factory\ProcessXmlRequestFactory;
 
 
 /**
@@ -25,7 +26,7 @@ use Pronamic\Twinfield\Request\Read as Read;
  * 
  * @author M.D.Ward <matthew.ward@byng-systems.com>
  */
-class BrowseFactory extends ParentFactory
+class BrowseFactory extends ProcessXmlRequestFactory
 {
     
     public function get($code, $office = null)
@@ -42,8 +43,10 @@ class BrowseFactory extends ParentFactory
 
 
             $browseResponse = $this->getService()->send($browseRequest);
+            //var_dump($browseResponse);exit;
+            
             $browseResponseDocument = $browseResponse->getResponseDocument();
-
+            //echo $browseResponseDocument->saveXML();exit;
 //            $browseResponseDocument->formatOutput = true;
 //            return $browseResponseDocument;
 
