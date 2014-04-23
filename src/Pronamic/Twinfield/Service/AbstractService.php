@@ -9,15 +9,39 @@ class AbstractService
     /**
      * @var \Pronamic\Twinfield\Secure\SessionLoginHandler
      */
-    protected $loginHandler;
+    protected $sessionLoginHandler;
 
     /**
      * [__construct description]
      * 
-     * @param SessionLoginHandler $loginHandler
+     * @param \Pronamic\Twinfield\Secure\SessionLoginHandler $sessionLoginHandler
      */
-    public function __construct(SessionLoginHandler $loginHandler)
+    public function __construct(SessionLoginHandler $sessionLoginHandler)
     {
-        $this->loginHandler = $loginHandler;
+        $this->sessionLoginHandler = $sessionLoginHandler;
     }
+
+    /**
+     * [getSessionLoginHandler description]
+     * 
+     * @return \Pronamic\Twinfield\Secure\SessionLoginHandler
+     */
+    public function getSessionLoginHandler()
+    {
+        return $this->sessionLoginHandler;
+    }
+    
+    /**
+     * [setSessionLoginHandler description]
+     * 
+     * @param \Pronamic\Twinfield\Secure\SessionLoginHandler $sessionLoginHandler
+     *
+     * @return \Pronamic\Twinfield\Service\AbstractService
+     */
+    public function setSessionLoginHandler(SessionLoginHandler $sessionLoginHandler)
+    {
+        $this->sessionLoginHandler = $sessionLoginHandler;
+        return $this;
+    }
+    
 }

@@ -29,14 +29,6 @@ use Pronamic\Twinfield\Secure\SessionLoginHandler;
 class ProcessXmlRequestService extends AbstractService
 {
     /**
-     * Holds the login class for this service
-     * 
-     * @access private
-     * @var \Pronamic\Twinfield\Secure\Login $login
-     */
-    private $login;
-
-    /**
      * The result from the ProcessXMLString
      * called to the Twinfield SOAP Service
      *
@@ -54,31 +46,6 @@ class ProcessXmlRequestService extends AbstractService
     private $response;
 
     /**
-     * [__construct description]
-     * 
-     * @param \Pronamic\Twinfield\Secure\SessionLoginHandler $login
-     */
-    public function __construct(SessionLoginHandler $login)
-    {
-        $this->login = $login;
-    }
-
-    /**
-     * Sets the login class for this secure service
-     *
-     * @since 0.0.1
-     * @access public
-     * 
-     * @param \Pronamic\Twinfield\Secure\SessionLoginHandler $login
-     * 
-     * @return void
-     */
-    public function setLogin(SessionLoginHandler $login)
-    {
-        $this->login = $login;
-    }
-
-    /**
      * Sends a request with the secured client, and loads
      * the result response into Service->response
      *
@@ -93,7 +60,7 @@ class ProcessXmlRequestService extends AbstractService
     public function send(DOMDocument $document)
     {
         // Get the secureclient and send this documents xml
-        $this->result = $this->login->getClient()->ProcessXmlString(array(
+        $this->result = $this->getSessionLoginHandler()->getClient()->ProcessXmlString(array(
             'xmlRequest' => $document->saveXML()
         ));
 

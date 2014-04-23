@@ -19,93 +19,65 @@ use Pronamic\Twinfield\Secure\SessionLoginHandler;
 class ProcessXmlRequestFactory
 {
     /**
-     * Holds the secure config class
-     * 
-     * @var \Pronamic\Twinfield\Secure\Config
-     */
-    protected $config;
-
-    /**
-     * Holds the secure login class
-     * 
-     * @var \Pronamic\Twinfield\Secure\SessionLoginHandler
-     */
-    private $login;
-
-    /**
      * Holds the response from a request.
      * 
      * @var \Pronamic\Twinfield\Response\Response
      */
     private $response;
 
+    /**
+     * @var \Pronamic\Twinfield\Service\ProcessXmlRequestService
+     */
     protected $processXmlRequestService;
 
     /**
-     * Pass in the Secure\Config class and it will automatically
-     * make the Secure\SessionLoginHandler for you.
+     * Constructor
      * 
-     * @access public
-     * @param \Pronamic\Twinfield\Secure\Config $config
+     * @param \Pronamic\Twinfield\Service\ProcessXmlRequestService $processXmlRequestService
      */
-    public function __construct(Config $config)
+    public function __construct(ProcessXmlRequestService $processXmlRequestService)
     {
-        $this->setConfig($config);
-        $this->makeLogin();
-    }
-    // public function __construct(ProcessXmlRequestService $processXmlRequestService)
-    // {
-    //     $this->processXmlRequestService = $processXmlRequestService;
-    // }
-
-    /**
-     * Sets the config class for usage in this factory
-     * instance.
-     * 
-     * Returns the instance back.
-     * 
-     * @access public
-     * @param \Pronamic\Twinfield\Secure\Config $config
-     * @return \Pronamic\Twinfield\Factory\ParentFactory
-     */
-    public function setConfig(Config $config)
-    {
-        $this->config = $config;
-        return $this;
+        $this->processXmlRequestService = $processXmlRequestService;
     }
 
     /**
-     * Returns this instances Secure\Config instance.
+     * [getProcessXmlRequestService description]
      * 
-     * @access public
-     * @return \Pronamic\Twinfield\Secure\Config
+     * @return \Pronamic\Twinfield\Service\ProcessXmlRequestService
      */
-    public function getConfig()
+    public function getProcessXmlRequestService()
     {
-        return $this->config;
+        return $this->processXmlRequestService;
     }
 
     /**
-     * Makes an instance of Secure\Login with the passed in 
-     * Secure\Config instance.
+     * [getSessionLoginHandler description]
      * 
-     * @access public
-     * @return boolean
-     */
-    public function makeLogin()
-    {
-        return $this->login = new SessionLoginHandler($this->getConfig());
-    }
-
-    /**
-     * Returns this instances associated login instance.
-     * 
-     * @access public
      * @return \Pronamic\Twinfield\Secure\SessionLoginHandler
      */
-    public function getLogin()
+    public function getSessionLoginHandler()
     {
-        return $this->login;
+        return $this->getProcessXmlRequestService()->getSessionLoginHandler();
+    }
+
+    /**
+     * [execute description]
+     * 
+     * @param  [type] $request [description]
+     * 
+     * @return \Pronamic\Twinfield\Response\Response
+     */
+    public function execute($request)
+    {
+        if($this->getSessionLoginHandler()->process()) {
+            
+            // Gets the secure service class
+            $service = $this->getService();
+
+            // Send the Request document and set the response to this instance.
+            $this->response = $service->send($request);
+            return $this->response;
+        }
     }
 
     /**
@@ -117,7 +89,8 @@ class ProcessXmlRequestFactory
      */
     public function getService()
     {
-        return new ProcessXmlRequestService($this->getLogin());
+        //return new ProcessXmlRequestService($this->getLogin());
+        return $this->processXmlRequestService;
     }
 
     /**

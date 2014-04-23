@@ -86,6 +86,11 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
         );
     }
 
+    public function getConfig()
+    {
+        return $this->config;
+    }
+
     /**
      * Will process the login.
      *

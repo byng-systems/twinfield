@@ -31,100 +31,88 @@ class BrowseFactory extends ProcessXmlRequestFactory
     
     public function get($code, $office = null)
     {
-        if ($this->getLogin()->process()) {
+        $browseRequest = new Read\Browse(
+            ($office ?: $this->getConfig()->getOffice()),
+            $code
+        );
 
-            // select the correct company
-//            $this->getLogin()->selectCompany($office);
+        $browseResponse = $this->execute($browseRequest);        
+        $browseResponseDocument = $browseResponse->getResponseDocument();
 
-            $browseRequest = new Read\Browse(
-                ($office ?: $this->getConfig()->getOffice()),
-                $code
-            );
-
-
-            $browseResponse = $this->getService()->send($browseRequest);
-            //var_dump($browseResponse);exit;
+        $xpath = new DOMXPath($browseResponseDocument);
+        
+        $finalDocument = new DOMDocument();
+        $finalDocument->appendChild($finalDocument->createElement("columns"));
             
-            $browseResponseDocument = $browseResponse->getResponseDocument();
-            //echo $browseResponseDocument->saveXML();exit;
-//            $browseResponseDocument->formatOutput = true;
-//            return $browseResponseDocument;
-
-            $xpath = new DOMXPath($browseResponseDocument);
+        /* @var $columnElement \DOMElement */
+        /* @var $childNode \DOMElement */
+        foreach ($xpath->query("/browse/columns/column") as $columnElement) {
             
-            $finalDocument = new DOMDocument();
-            $finalDocument->appendChild($finalDocument->createElement("columns"));
-            
-            /* @var $columnElement \DOMElement */
-            /* @var $childNode \DOMElement */
-            foreach ($xpath->query("/browse/columns/column") as $columnElement) {
-                
-                $finalColumn = $finalDocument->createElement("column");
+            $finalColumn = $finalDocument->createElement("column");
 
-                $isOfficeField = false;
-                foreach ($xpath->query("./field | ./label | ./visible | ./from | ./to", $columnElement) as $finalField) {
-                    $importNode = $finalDocument->importNode($finalField, true);
-                    $tag = $importNode->nodeName;
+            $isOfficeField = false;
+            foreach ($xpath->query("./field | ./label | ./visible | ./from | ./to", $columnElement) as $finalField) {
+                $importNode = $finalDocument->importNode($finalField, true);
+                $tag = $importNode->nodeName;
 
-                    if ($importNode->nodeValue == "fin.trs.head.office") {
-                        $isOfficeField = true;
-                    }
-                    if ($isOfficeField) {
-                        if ($importNode->nodeName == "from") {
-                            $importNode->nodeValue = $office;
-                        }
-                        if ($importNode->nodeName == "to") {
-                            $importNode->nodeValue = $office;
-                        }
-                    }
-                    $finalColumn->appendChild($importNode);
+                if ($importNode->nodeValue == "fin.trs.head.office") {
+                    $isOfficeField = true;
                 }
-                
-                $finalDocument->documentElement->appendChild($finalColumn);
+                if ($isOfficeField) {
+                    if ($importNode->nodeName == "from") {
+                        $importNode->nodeValue = $office;
+                    }
+                    if ($importNode->nodeName == "to") {
+                        $importNode->nodeValue = $office;
+                    }
+                }
+                $finalColumn->appendChild($importNode);
+            }
+            
+            $finalDocument->documentElement->appendChild($finalColumn);
+        }
+
+            
+        $finalDocument->documentElement->appendChild(new DOMAttr("code", $code));
+        $finalDocument->formatOutput = true;
+        
+        $response = $this->execute($finalDocument);
+        
+        if ($response->isSuccessful()) {
+            $response->getResponseDocument()->formatOutput = true;
+            $responseDocument = $response->getResponseDocument();
+
+            // Munge to SimpleXML
+            $xmlResponse = new SimpleXMLElement($responseDocument->saveXML());
+
+            // Get all the data rows out
+            $data = array();
+            foreach($xmlResponse->xpath("tr") as $xmlRow) {
+                $dataRow = array();
+                foreach ($xmlRow->xpath("td") as $value) {
+                    $dataRow[] = (string) $value;
+                }
+                $data[] = $dataRow;
             }
 
-            
-            $finalDocument->documentElement->appendChild(new DOMAttr("code", $code));
-            $finalDocument->formatOutput = true;
-            
-            $response = $this->getService()->send($finalDocument);
-            
-            if ($response->isSuccessful()) {
-                $response->getResponseDocument()->formatOutput = true;
-                $responseDocument = $response->getResponseDocument();
-
-                // Munge to SimpleXML
-                $xmlResponse = new SimpleXMLElement($responseDocument->saveXML());
-
-                // Get all the data rows out
-                $data = array();
-                foreach($xmlResponse->xpath("tr") as $xmlRow) {
-                    $dataRow = array();
-                    foreach ($xmlRow->xpath("td") as $value) {
-                        $dataRow[] = (string) $value;
-                    }
-                    $data[] = $dataRow;
-                }
-
-                // Get the key labels out
-                $keys = array();
-                foreach ($xmlResponse->xpath("th/td") as $header) {
-                    $keys[] = (string) $header->attributes()->label;
-                }
-
-                // Convert from CSV style to indexed arrays
-                $rotated = array();
-                foreach ($data as $xmlRow) {
-                    $dataRow = array();
-                    foreach ($xmlRow as $index => $value) {
-                        $dataRow[$keys[$index]] = $value;
-                    }
-                    $rotated[] = (object) $dataRow;
-                }
-
-
-                return $rotated;
+            // Get the key labels out
+            $keys = array();
+            foreach ($xmlResponse->xpath("th/td") as $header) {
+                $keys[] = (string) $header->attributes()->label;
             }
+
+            // Convert from CSV style to indexed arrays
+            $rotated = array();
+            foreach ($data as $xmlRow) {
+                $dataRow = array();
+                foreach ($xmlRow as $index => $value) {
+                    $dataRow[$keys[$index]] = $value;
+                }
+                $rotated[] = (object) $dataRow;
+            }
+
+
+            return $rotated;
         }
     }
     
