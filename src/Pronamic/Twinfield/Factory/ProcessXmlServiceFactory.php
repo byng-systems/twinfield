@@ -2,25 +2,24 @@
 namespace Pronamic\Twinfield\Factory;
 
 use Pronamic\Twinfield\Secure\SessionLoginHandler;
-use Pronamic\Twinfield\Secure\ConfigInterface;
-use Pronamic\Twinfield\Response\Response;
+use Pronamic\Twinfield\Service\ProcessXmlRequestService;
 use Pronamic\Twinfield\Customer\CustomerFactory;
+use Pronamic\Twinfield\Browse\BrowseFactory;
 
-/**
- * All Factories used by all components extend this factory for common
- * shared methods that help normalize the usage between different components.\
- * 
- * @note this is a facade pattern. Named factory now, cant change it.
- * 
- * @author Leon Rowland <leon@rowland.nl>
- */
+
 class ProcessXmlServiceFactory
 {
     /**
-     * @var SessionLoginHandler
+     * @var \Pronamic\Twinfield\Secure\SessionLoginHandler
      */
     protected $sessionLoginHandler;
 
+    /**
+     *
+     * @var \Pronamic\Twinfield\Service\ProcessXmlRequestService
+     */
+    protected $processXmlRequestService;
+    
     /**
      * Pass in the Secure\Config class and it will automatically
      * make the Secure\SessionLoginHandler for you.
@@ -31,6 +30,7 @@ class ProcessXmlServiceFactory
     public function __construct(SessionLoginHandler $sessionLoginHandler)
     {
         $this->sessionLoginHandler = $sessionLoginHandler;
+        $this->processXmlRequestService = new ProcessXmlRequestService($sessionLoginHandler);
     }
 
     /**
@@ -40,8 +40,20 @@ class ProcessXmlServiceFactory
      * 
      * @return \Pronamic\Twinfield\Customer\CustomerFactory
      */
-    public function buildCustomerFactory(ConfigInterface $config)
+    public function buildCustomerFactory()
     {
-        return new CustomerFactory($config);
+        return new CustomerFactory($this->processXmlRequestService);
+    }
+    
+    /**
+     * [buildCustomerFactory description]
+     * 
+     * @param \Pronamic\Twinfield\Secure\ConfigInterface $config
+     * 
+     * @return \Pronamic\Twinfield\Browse\BrowseFactory
+     */
+    public function buildBrowseFactory()
+    {
+        return new BrowseFactory($this->processXmlRequestService);
     }
 }
