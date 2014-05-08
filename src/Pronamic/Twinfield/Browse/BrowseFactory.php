@@ -16,7 +16,6 @@ use DOMDocument;
 use DOMElement;
 use DOMXPath;
 use SimpleXMLElement;
-use Pronamic\Twinfield\Factory\ParentFactory;
 use Pronamic\Twinfield\Request\Read as Read;
 use Pronamic\Twinfield\Factory\ProcessXmlRequestFactory;
 
@@ -32,6 +31,14 @@ class BrowseFactory extends ProcessXmlRequestFactory
     const KEY_LABEL = "label";
     const KEY_VALUE = "value";
    
+    /**
+     * Set the value to use for the results array keys.
+     * 
+     * @param string $resultKey label = descriptive column name e.g. Company
+     *                          value = twinfields column name e.g. fin.trs.head.office
+     * 
+     * @return \Pronamic\Twinfield\Browse\BrowseFactory
+     */
     public function setResultArrayKey($resultKey)
     {
         if($resultKey !== static::KEY_LABEL && $resultKey !== static::KEY_VALUE) {
@@ -39,6 +46,8 @@ class BrowseFactory extends ProcessXmlRequestFactory
         } else {
             $this->resultKey = $resultKey;
         }
+        
+        return $this;
     }
     
     public function get($code, $office = null)
