@@ -20,7 +20,6 @@ use Pronamic\Twinfield\Factory\ParentFactory;
 use Pronamic\Twinfield\Request\Read as Read;
 use Pronamic\Twinfield\Factory\ProcessXmlRequestFactory;
 
-
 /**
  * BrowseFactory
  * 
@@ -28,6 +27,19 @@ use Pronamic\Twinfield\Factory\ProcessXmlRequestFactory;
  */
 class BrowseFactory extends ProcessXmlRequestFactory
 {
+    protected $resultKey = "label";
+    
+    const KEY_LABEL = "label";
+    const KEY_VALUE = "value";
+   
+    public function setResultArrayKey($resultKey)
+    {
+        if($resultKey !== static::KEY_LABEL && $resultKey !== static::KEY_VALUE) {
+            $this->resultKey = static::KEY_LABEL;
+        } else {
+            $this->resultKey = $resultKey;
+        }
+    }
     
     public function get($code, $office = null)
     {
@@ -98,7 +110,11 @@ class BrowseFactory extends ProcessXmlRequestFactory
             // Get the key labels out
             $keys = array();
             foreach ($xmlResponse->xpath("th/td") as $header) {
-                $keys[] = (string) $header->attributes()->label;
+                if($this->resultKey === static::KEY_LABEL) {
+                    $keys[] = (string) $header->attributes()->label;
+                } else {
+                    $keys[] = (string) $header;
+                }
             }
 
             // Convert from CSV style to indexed arrays
