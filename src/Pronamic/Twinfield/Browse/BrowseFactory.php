@@ -18,6 +18,7 @@ use DOMXPath;
 use SimpleXMLElement;
 use Pronamic\Twinfield\Request\Read as Read;
 use Pronamic\Twinfield\Factory\ProcessXmlRequestFactory;
+use Pronamic\Twinfield\Exception\RequestFailedException;
 
 /**
  * BrowseFactory
@@ -50,11 +51,18 @@ class BrowseFactory extends ProcessXmlRequestFactory
         return $this;
     }
     
-    public function get($code, $office = null)
+    public function get($code, $office = null, $extras = array())
     {
         $browseRequest = new Read\Browse(
             ($office ?: $this->getConfig()->getOffice()),
             $code
+        );
+        
+        $extras["fin.trs.head.office"] = array(
+            "label" => "Office",
+            "from" => $office,
+            "operator" => "equal",
+            "visible" => "true"
         );
 
         $browseResponse = $this->execute($browseRequest);        
@@ -67,29 +75,58 @@ class BrowseFactory extends ProcessXmlRequestFactory
             
         /* @var $columnElement \DOMElement */
         /* @var $childNode \DOMElement */
+        // Loop through each <column>..
+        $finds = array();
         foreach ($xpath->query("/browse/columns/column") as $columnElement) {
             
             $finalColumn = $finalDocument->createElement("column");
 
-            $isOfficeField = false;
-            foreach ($xpath->query("./field | ./label | ./visible | ./from | ./to", $columnElement) as $finalField) {
-                $importNode = $finalDocument->importNode($finalField, true);
-                $tag = $importNode->nodeName;
-
-                if ($importNode->nodeValue == "fin.trs.head.office") {
-                    $isOfficeField = true;
+            // Loop through all <field>s in the <column> (should only be one) ..
+            foreach ($xpath->query("./field", $columnElement) as $finalField) {
+                $found = null; 
+                $importField = $finalDocument->importNode($finalField, true);
+                
+                // Add field to the column
+                $finalColumn->appendChild($importField);
+                
+                // If we find the field in the extras array, mark it down..
+                if (isset($extras[$importField->nodeValue])) {
+                    $finds[] = $found = $importField->nodeValue;
                 }
-                if ($isOfficeField) {
-                    if ($importNode->nodeName == "from") {
-                        $importNode->nodeValue = $office;
+                
+                // Loop through other elements in the <column>..
+                foreach ($xpath->query("./label | ./visible | ./from | ./to | ./operator ", $columnElement) as $finalItems) {
+                    $importNode = $finalDocument->importNode($finalItems, true);
+                    
+                    // If we have overrides in the extras structure, apply them
+                    if ($found && isset($extras[$found][$importNode->nodeName])) {
+                        $importNode->nodeValue = $extras[$found][$importNode->nodeName];
                     }
-                    if ($importNode->nodeName == "to") {
-                        $importNode->nodeValue = $office;
-                    }
+                    
+                    // Add item to the <column>
+                    $finalColumn->appendChild($importNode);
                 }
-                $finalColumn->appendChild($importNode);
             }
             
+            // Add <column> to the final document
+            $finalDocument->documentElement->appendChild($finalColumn);
+        }
+        
+        // Loop through extras that weren't found in the browseResponseDocument..
+        foreach (array_diff(array_keys($extras), $finds) as $key) {
+            $finalColumn = $finalDocument->createElement("column");
+            
+            // Add in the field element in case it was forgotten
+            $extras[$key]["field"] = $key;
+            
+            // Loop through each field and add it to the column
+            foreach ($extras[$key] as $tag => $value) {
+                $element = $finalDocument->createElement($tag);
+                $element->nodeValue = $value;
+                $finalColumn->appendChild($element);
+            }
+            
+            // Add the column to the document
             $finalDocument->documentElement->appendChild($finalColumn);
         }
 
@@ -138,6 +175,15 @@ class BrowseFactory extends ProcessXmlRequestFactory
 
 
             return $rotated;
+        } else {
+            $reason = "No error message received";
+            $messages = $response->getErrorMessages();
+            if (count($messages) === 1) {
+                $reason = $messages[0];
+            } else {
+                $reason = json_encode($messages);
+            }
+            throw new RequestFailedException("Failed to get from soap endpoint. Twinfields said: " . $reason);
         }
     }
     
