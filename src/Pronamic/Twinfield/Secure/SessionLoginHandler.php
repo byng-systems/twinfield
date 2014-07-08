@@ -173,4 +173,30 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
 
         return $client;
     }
+    
+    /**
+     * 
+     * @return string
+     */
+    public function getSessionId()
+    {
+        if(!$this->processed) {
+            $this->process();
+        }
+
+        return $this->sessionID;
+    }
+    
+    /**
+     * 
+     * @return string
+     */
+    public function getCluster()
+    {
+        if(!$this->processed) {
+            $this->process();
+        }
+
+        return $this->cluster;
+    }
 }
