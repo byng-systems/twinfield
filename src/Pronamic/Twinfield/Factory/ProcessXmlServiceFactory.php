@@ -5,6 +5,7 @@ use Pronamic\Twinfield\Secure\SessionLoginHandler;
 use Pronamic\Twinfield\Service\ProcessXmlRequestService;
 use Pronamic\Twinfield\Customer\CustomerFactory;
 use Pronamic\Twinfield\Browse\BrowseFactory;
+use Pronamic\Twinfield\Transaction\TransactionFactory;
 
 
 class ProcessXmlServiceFactory
@@ -55,5 +56,15 @@ class ProcessXmlServiceFactory
     public function buildBrowseFactory()
     {
         return new BrowseFactory($this->processXmlRequestService);
+    }
+    
+    /**
+     * [buildTransactionFactory description]
+     * 
+     * @return \Pronamic\Twinfield\Transaction\TransactionFactory
+     */
+    public function buildTransactionFactory()
+    {
+        return new TransactionFactory($this->processXmlRequestService);
     }
 }

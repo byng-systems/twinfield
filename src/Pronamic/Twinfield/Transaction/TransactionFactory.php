@@ -2,43 +2,40 @@
 
 namespace Pronamic\Twinfield\Transaction;
 
-use \Pronamic\Twinfield\Factory\ParentFactory;
 use \Pronamic\Twinfield\Request as Request;
+use Pronamic\Twinfield\Factory\ProcessXmlRequestFactory;
 
 /**
  * TransactionFactory class
  * 
  * @author Dylan Schoenmakers <dylan@opifer.nl>
  */
-class TransactionFactory extends ParentFactory
+class TransactionFactory extends ProcessXmlRequestFactory
 {
     
     public function get($code, $number, $office = null)
     {
-        if($this->getLogin()->process()) {
-            
-            // Get the secure service
-            $service = $this->getService();
-            
-            if(!$office)
-                $office = $this->getConfig()->getOffice();
-            
-            // Make a request to read a single transaction
-            $request_transaction = new Request\Read\Transaction();
-            $request_transaction
-                ->setCode($code)
-                ->setNumber($number)
-                ->setOffice($office);
-            
-            // Send the Request document and set the response to this instance
-            $response = $service->send($request_transaction);
-            $this->setResponse($response);
-            
-            if($response->isSuccessful()) {
-                return Mapper\TransactionMapper::map($response);
-            } else {
-                return false;
-            }
+        // Get the secure service
+        $service = $this->getService();
+
+        if(!$office)
+            $office = $this->getConfig()->getOffice();
+
+        // Make a request to read a single transaction
+        $request_transaction = new Request\Read\Transaction();
+        $request_transaction
+            ->setCode($code)
+            ->setNumber($number)
+            ->setOffice($office);
+
+        // Send the Request document and set the response to this instance
+        $response = $service->send($request_transaction);
+        $this->setResponse($response);
+
+        if($response->isSuccessful()) {
+            return Mapper\TransactionMapper::map($response);
+        } else {
+            return false;
         }
     }
 
