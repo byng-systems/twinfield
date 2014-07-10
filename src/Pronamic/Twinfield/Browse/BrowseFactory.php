@@ -51,13 +51,37 @@ class BrowseFactory extends ProcessXmlRequestFactory
         return $this;
     }
     
-    public function get($code, $office = null, $extras = array())
+    /**
+     * 
+     * @param string $code
+     * @param string $office
+     * 
+     * @return \DOMDocument
+     */
+    public function getBrowseColumnsResponse($code, $office = null)
     {
         $browseRequest = new Read\Browse(
             ($office ?: $this->getConfig()->getOffice()),
             $code
         );
         
+        $browseResponse = $this->execute($browseRequest);        
+        $browseResponseDocument = $browseResponse->getResponseDocument();
+        return $browseResponseDocument;
+    }
+    
+    /**
+     * 
+     * @param string $code
+     * @param string $office
+     * @param array  $extras
+     * 
+     * @return array
+     * 
+     * @throws RequestFailedException
+     */
+    public function get($code, $office = null, $extras = array())
+    {        
         $extras["fin.trs.head.office"] = array(
             "label" => "Office",
             "from" => $office,
@@ -65,8 +89,7 @@ class BrowseFactory extends ProcessXmlRequestFactory
             "visible" => "true"
         );
 
-        $browseResponse = $this->execute($browseRequest);        
-        $browseResponseDocument = $browseResponse->getResponseDocument();
+        $browseResponseDocument = $this->getBrowseColumnsResponse($code, $office);
 
         $xpath = new DOMXPath($browseResponseDocument);
         
