@@ -225,4 +225,14 @@ class TransactionLine
         $this->matchStatus = $matchStatus;
         return $this;
     }
+    
+    /**
+     * Return an array representation of this object
+     * 
+     * @return array
+     */
+    public function toArray()
+    {
+        return get_object_vars($this);
+    }
 }

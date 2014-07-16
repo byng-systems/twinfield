@@ -176,4 +176,21 @@ class Transaction
         $this->number = $number;
         return $this;
     }
+    
+    /**
+     * Convert this object and associated transaction lines to an array
+     * 
+     * @return array
+     */
+    public function toArray()
+    {
+        $vars = get_object_vars($this);
+        $vars["lines"] = array();
+        
+        foreach($this->lines as $line) {
+            $vars["lines"][] = $line->toArray();
+        }
+        
+        return $vars;
+    }
 }
