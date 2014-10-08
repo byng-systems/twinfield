@@ -22,7 +22,8 @@ class TransactionMapper
             'office'        => 'setOffice',
             'duedate'       => 'setDueDate',
             'origin'        => 'setOrigin',
-            'number'        => 'setNumber'
+            'number'        => 'setNumber',
+            'statementnumber' => 'setStatementNumber'
         );
         
         // Make new Transaction Object

@@ -26,6 +26,7 @@ class Transaction
     private $dueDate;
     private $invoiceNumber;
     private $number;
+    private $statementNumber;
     private $lines = array();
 
     /**
@@ -108,6 +109,17 @@ class Transaction
     public function setInvoiceNumber($invoiceNumber)
     {
         $this->invoiceNumber = $invoiceNumber;
+        return $this;
+    }
+    
+    public function getStatementNumber()
+    {
+        return $this->statementNumber;
+    }
+
+    public function setStatementNumber($statementNumber)
+    {
+        $this->statementNumber = $statementNumber;
         return $this;
     }
     
