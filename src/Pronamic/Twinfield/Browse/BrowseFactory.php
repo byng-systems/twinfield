@@ -57,6 +57,8 @@ class BrowseFactory extends ProcessXmlRequestFactory
      * @param string $office
      * 
      * @return \DOMDocument
+     * 
+     * @throws RequestFailedException
      */
     public function getBrowseColumnsResponse($code, $office = null)
     {
@@ -65,7 +67,12 @@ class BrowseFactory extends ProcessXmlRequestFactory
             $code
         );
         
-        $browseResponse = $this->execute($browseRequest);        
+        $browseResponse = $this->execute($browseRequest);
+        
+        if($browseResponse === null) {
+            throw new RequestFailedException("Incorrect login credentials");
+        }
+        
         $browseResponseDocument = $browseResponse->getResponseDocument();
         return $browseResponseDocument;
     }
