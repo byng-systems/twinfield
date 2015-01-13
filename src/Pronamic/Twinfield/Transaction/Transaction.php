@@ -17,6 +17,7 @@ class Transaction
     private $date;
     private $period;
     private $origin;
+    private $originReference;
     
     /**
      *
@@ -153,6 +154,17 @@ class Transaction
     public function setOrigin($origin)
     {
         $this->origin = $origin;
+        return $this;
+    }
+    
+    public function getOriginReference()
+    {
+        return $this->originReference;
+    }
+
+    public function setOriginReference($originReference)
+    {
+        $this->originReference = $originReference;
         return $this;
     }
 

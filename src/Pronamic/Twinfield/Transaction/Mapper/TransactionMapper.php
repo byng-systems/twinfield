@@ -14,16 +14,17 @@ class TransactionMapper
 
         // All tags for the transaction
         $transactionTags = array(
-            'code'          => 'setCode',
-            'currency'      => 'setCurrency',
-            'date'          => 'setDate',
-            'period'        => 'setPeriod',
-            'invoicenumber' => 'setInvoiceNumber',
-            'office'        => 'setOffice',
-            'duedate'       => 'setDueDate',
-            'origin'        => 'setOrigin',
-            'number'        => 'setNumber',
-            'statementnumber' => 'setStatementNumber'
+            'code'              =>  'setCode',
+            'currency'          =>  'setCurrency',
+            'date'              =>  'setDate',
+            'period'            =>  'setPeriod',
+            'invoicenumber'     =>  'setInvoiceNumber',
+            'office'            =>  'setOffice',
+            'duedate'           =>  'setDueDate',
+            'origin'            =>  'setOrigin',
+            'originreference'   =>  'setOriginReference',
+            'number'            =>  'setNumber',
+            'statementnumber'   =>  'setStatementNumber'
         );
         
         // Make new Transaction Object
