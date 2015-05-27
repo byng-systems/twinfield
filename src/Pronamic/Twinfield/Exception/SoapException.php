@@ -24,6 +24,6 @@ abstract class SoapException extends SoapFault implements ExceptionInterface
     
     public function __construct(SoapFault $previous)
     {
-        parent::SoapFault($previous->getCode(), $previous->getMessage());
+        parent::SoapFault($previous->faultcode, $previous->faultstring);
     }
 }
