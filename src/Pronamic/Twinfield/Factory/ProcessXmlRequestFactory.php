@@ -57,7 +57,7 @@ class ProcessXmlRequestFactory
     {
         return $this->getProcessXmlRequestService()->getSessionLoginHandler();
     }
-    
+
     /**
      * 
      * @param SessionLoginHandler $sessionLoginHandler
@@ -79,21 +79,11 @@ class ProcessXmlRequestFactory
      */
     public function execute($request)
     {
-        $sessionHandler = $this->getSessionLoginHandler();
-
-        if ($sessionHandler->process()) {
+        if ($this->getSessionLoginHandler()->process()) {
             $service = $this->getService();
             
-            try {
-                // Send the Request document and set the response to this instance.
-                return ($this->response = $service->send($request));
-
-            } catch (SessionException $ex) {
-                $sessionHandler->renew();
-
-                // Attempt to repeat the previous operation
-                return ($this->response = $service->send($request));
-            }
+            // Send the Request document and set the response to this instance.
+            return ($this->response = $service->send($request));
         }
     }
 
