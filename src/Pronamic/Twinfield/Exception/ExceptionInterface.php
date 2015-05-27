@@ -7,6 +7,6 @@ namespace Pronamic\Twinfield\Exception;
  *
  * @author Dylan Schoenmakers <dylan@opifer.nl>
  */
-interface Exception
+interface ExceptionInterface
 {
 }

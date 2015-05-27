@@ -1,12 +1,10 @@
 <?php
 namespace Pronamic\Twinfield\Factory;
 
-use Pronamic\Twinfield\Secure\Config;
-use Pronamic\Twinfield\Secure\Login;
-use Pronamic\Twinfield\Service\AbstractService;
-use Pronamic\Twinfield\Service\ProcessXmlRequestService;
+use Pronamic\Twinfield\Exception\SessionException;
 use Pronamic\Twinfield\Response\Response;
 use Pronamic\Twinfield\Secure\SessionLoginHandler;
+use Pronamic\Twinfield\Service\ProcessXmlRequestService;
 
 /**
  * All Factories used by all components extend this factory for common
@@ -21,19 +19,19 @@ class ProcessXmlRequestFactory
     /**
      * Holds the response from a request.
      * 
-     * @var \Pronamic\Twinfield\Response\Response
+     * @var Response
      */
     private $response;
 
     /**
-     * @var \Pronamic\Twinfield\Service\ProcessXmlRequestService
+     * @var ProcessXmlRequestService
      */
     protected $processXmlRequestService;
 
     /**
      * Constructor
      * 
-     * @param \Pronamic\Twinfield\Service\ProcessXmlRequestService $processXmlRequestService
+     * @param ProcessXmlRequestService $processXmlRequestService
      */
     public function __construct(ProcessXmlRequestService $processXmlRequestService)
     {
@@ -43,7 +41,7 @@ class ProcessXmlRequestFactory
     /**
      * [getProcessXmlRequestService description]
      * 
-     * @return \Pronamic\Twinfield\Service\ProcessXmlRequestService
+     * @return ProcessXmlRequestService
      */
     public function getProcessXmlRequestService()
     {
@@ -53,11 +51,23 @@ class ProcessXmlRequestFactory
     /**
      * [getSessionLoginHandler description]
      * 
-     * @return \Pronamic\Twinfield\Secure\SessionLoginHandler
+     * @return SessionLoginHandler
      */
     public function getSessionLoginHandler()
     {
         return $this->getProcessXmlRequestService()->getSessionLoginHandler();
+    }
+    
+    /**
+     * 
+     * @param SessionLoginHandler $sessionLoginHandler
+     * @return ProcessXmlRequestFactory
+     */
+    public function setSessionLoginHandler(SessionLoginHandler $sessionLoginHandler)
+    {
+        $this->getProcessXmlRequestService()->setSessionLoginHandler($sessionLoginHandler);
+        
+        return $this;
     }
 
     /**
@@ -65,18 +75,25 @@ class ProcessXmlRequestFactory
      * 
      * @param  [type] $request [description]
      * 
-     * @return \Pronamic\Twinfield\Response\Response
+     * @return Response
      */
     public function execute($request)
     {
-        if($this->getSessionLoginHandler()->process()) {
-            
-            // Gets the secure service class
-            $service = $this->getService();
+        $sessionHandler = $this->getSessionLoginHandler();
 
-            // Send the Request document and set the response to this instance.
-            $this->response = $service->send($request);
-            return $this->response;
+        if ($sessionHandler->process()) {
+            $service = $this->getService();
+            
+            try {
+                // Send the Request document and set the response to this instance.
+                return ($this->response = $service->send($request));
+
+            } catch (SessionException $ex) {
+                $sessionHandler->renew();
+
+                // Attempt to repeat the previous operation
+                return ($this->response = $service->send($request));
+            }
         }
     }
 
@@ -98,7 +115,7 @@ class ProcessXmlRequestFactory
      * document from an attempted SOAP request.
      * 
      * @access public
-     * @param \Pronamic\Twinfield\Response\Response $response
+     * @param Response $response
      * @return \Pronamic\Twinfield\Factory\ParentFactory
      */
     public function setResponse(Response $response)
@@ -111,7 +128,7 @@ class ProcessXmlRequestFactory
      * Returns the response that was last set.
      * 
      * @access public
-     * @return \Pronamic\Twinfield\Response\Response
+     * @return Response
      */
     public function getResponse()
     {

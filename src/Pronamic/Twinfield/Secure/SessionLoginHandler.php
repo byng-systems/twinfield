@@ -1,7 +1,11 @@
 <?php
 namespace Pronamic\Twinfield\Secure;
 
+use DateInterval;
+use DateTime;
+use DOMDocument;
 use Pronamic\Twinfield\SoapClient;
+use SoapHeader;
 
 /**
  * Login Class.
@@ -27,15 +31,34 @@ use Pronamic\Twinfield\SoapClient;
  */
 class SessionLoginHandler extends AbstractAuthenticationHandler
 {
+    /**
+     * Set session timeout interval to 1 hour 55 minutes
+     */
+    const SESSION_TIMEOUT_INTERVAL = 'PT1H55M';
+    
+    /**
+     *
+     * @var string
+     */
     protected $loginWSDL    = 'https://login.twinfield.com/webservices/session.asmx?wsdl';
+    
+    /**
+     *
+     * @var string
+     */
     protected $clusterWSDL  = '%s/webservices/processxml.asmx?wsdl';
+    
+    /**
+     *
+     * @var string
+     */
     protected $xmlNamespace = 'http://schemas.xmlsoap.org/soap/envelope/';
     
     /**
      * Holds the passed in Config instance
      * 
      * @access private
-     * @var Pronamic\Twinfield\Secure\Config
+     * @var Config
      */
     protected $config;
 
@@ -55,7 +78,7 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
      * @var string
      */
     private $sessionID;
-
+    
     /**
      * The server cluster used for future XML
      * requests with the new SoapClient
@@ -70,10 +93,16 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
      * successful
      *
      * @access private
-     * @var boolean
+     * @var DateTime
      */
-    private $processed = false;
-
+    private $loginExpiry = null;
+    
+    
+    
+    /**
+     * 
+     * @param \Pronamic\Twinfield\Secure\Config $config
+     */
     public function __construct(Config $config)
     {
         $this->config = $config;
@@ -85,12 +114,47 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
             )
         );
     }
+    
+    /**
+     * 
+     * @return array
+     */
+    public function __sleep()
+    {
+        return array_diff(
+            array_keys(get_object_vars($this)),
+            ['loginResponse', 'authenticationSoapClient']
+        );
+    }
+
+    /**
+     * Handles actions on sleep
+     */
+    public function __wakeup()
+    {
+        $this->authenticationSoapClient = new SoapClient(
+            $this->loginWSDL,
+            ['trace' => 1]
+        );
+    }
 
     public function getConfig()
     {
         return $this->config;
     }
-
+    
+    /**
+     * 
+     * @return boolean
+     */
+    public function isProcessed()
+    {
+        return (
+            $this->loginExpiry !== null
+            && new DateTime() < $this->loginExpiry
+        );
+    }
+    
     /**
      * Will process the login.
      *
@@ -104,16 +168,32 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
      */
     public function process()
     {
+        if ($this->isProcessed() === true) {
+            return true;
+        }
+
+        return $this->renew();
+    }
+    
+    /**
+     * Will forceably renew the login
+     * 
+     * If successful, will set the session and cluster information to the object
+     * 
+     * @return boolean
+     */
+    public function renew()
+    {
         // Process logon
         $response = $this->authenticationSoapClient->Logon($this->config->getCredentials());
 
         // Check response is successful
-        if('Ok' == $response->LogonResult) {
+        if('Ok' === $response->LogonResult) {
             // Response from the logon request
             $this->loginResponse = $this->authenticationSoapClient->__getLastResponse();
 
             // Make a new DOM and load the response XML
-            $envelope = new \DOMDocument();
+            $envelope = new DOMDocument();
             $envelope->loadXML($this->loginResponse);
 
             // Gets SessionID
@@ -123,9 +203,10 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
             // Gets Cluster URL
             $cluster       = $envelope->getElementsByTagName('cluster');
             $this->cluster = $cluster->item(0)->textContent;
-
+            
             // This login object is processed!
-            $this->processed = true;
+            $this->loginExpiry = new DateTime();
+            $this->loginExpiry->add(new DateInterval(static::SESSION_TIMEOUT_INTERVAL));
 
             return true;
         }
@@ -141,15 +222,17 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
      * @since 0.0.1
      *
      * @access public
-     * @return \SoapHeader
+     * @return SoapHeader
      */
     public function getHeader()
     {
-        if(! $this->processed)
-            $this->process();
+        $this->process();
 
-        return new \SoapHeader('http://www.twinfield.com/', 'Header',
-            array('SessionID' => $this->sessionID));
+        return new SoapHeader(
+            'http://www.twinfield.com/',
+            'Header',
+            ['SessionID' => $this->sessionID]
+        );
     }
 
     /**
@@ -164,8 +247,7 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
      */
     public function getClient()
     {
-        if(! $this->processed)
-            $this->process();
+        $this->process();
 
         // Makes a new client, and assigns the header to it
         $client = new SoapClient(sprintf($this->clusterWSDL, $this->cluster));
@@ -180,9 +262,7 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
      */
     public function getSessionId()
     {
-        if(!$this->processed) {
-            $this->process();
-        }
+        $this->process();
 
         return $this->sessionID;
     }
@@ -193,9 +273,7 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
      */
     public function getCluster()
     {
-        if(!$this->processed) {
-            $this->process();
-        }
+        $this->process();
 
         return $this->cluster;
     }

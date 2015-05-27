@@ -73,8 +73,7 @@ class BrowseFactory extends ProcessXmlRequestFactory
             throw new RequestFailedException("Incorrect login credentials");
         }
         
-        $browseResponseDocument = $browseResponse->getResponseDocument();
-        return $browseResponseDocument;
+        return $browseResponse->getResponseDocument();
     }
     
     /**
@@ -88,7 +87,7 @@ class BrowseFactory extends ProcessXmlRequestFactory
      * @throws RequestFailedException
      */
     public function get($code, $office = null, $extras = array())
-    {        
+    {
         $extras["fin.trs.head.office"] = array(
             "label" => "Office",
             "from" => $office,

@@ -1,18 +1,35 @@
 <?php
 namespace Pronamic\Twinfield;
 
+use Exception;
+use Pronamic\Twinfield\Exception\SessionInvalidatedException;
+use Pronamic\Twinfield\Exception\SessionTimeoutException;
+use SoapClient as BaseSoapClient;
+use SoapFault;
+
 /**
  * Twinfield Soap Client.
- * 
- * @todo find a nice way to handle a possible timeout
  * 
  * @package Pronamic\Twinfield
  * @author Leon Rowland <leon@rowland.nl>
  * @copyright (c) 2013, Pronamic
  * @version 0.0.1
  */
-class SoapClient extends \SoapClient
+class SoapClient extends BaseSoapClient
 {
+
+    /**
+     * 
+     */
+    const SESSION_INVALIDATED_MESSAGE = 'Another user logged on with your user name. You are logged off now.';
+    
+    /**
+     * 
+     */
+    const SESSION_TIMEOUT_MESSAGE = 'Your logon credentials are not valid anymore. Try to log on again.';
+    
+    
+    
     /**
      * Overides the call method, to keep making
      * requests if it times out.
@@ -20,32 +37,34 @@ class SoapClient extends \SoapClient
      * @todo require a better way than using exceptions.
      * 
      * @access public
-     * @param string $function_name
+     * @param string $functionName
      * @param mixed $arguments
      * @return SoapClient
-     * @throws \SoapFault
+     * @throws SoapFault
      */
-    public function __call($function_name, $arguments)
+    public function __call($functionName, $arguments)
     {
-        $result      = false;
-        $max_retries = 5;
-        $retry_count = 0;
-
-        // Keep making the same request until you have reached 5 attempts.
-        while(! $result && $retry_count < $max_retries) {
-            try {
-                $result = parent::__call($function_name, $arguments);
-            } catch(SoapFault $fault) {
-                sleep(1);
-                $retry_count++;
-            }
+        try {
+            return parent::__call($functionName, $arguments);
+        } catch (SoapFault $ex) {
+            throw $this->transformException($ex);
+        }
+    }
+    
+    /**
+     * 
+     * @param SoapFault $ex
+     * @return Exception
+     */
+    protected function transformException(SoapFault $ex)
+    {
+        switch ($ex->getMessage()) {
+            case self::SESSION_TIMEOUT_MESSAGE:
+                return new SessionTimeoutException($ex);
+            case self::SESSION_INVALIDATED_MESSAGE:
+                return new SessionInvalidatedException($ex);
         }
 
-        // Throw the error after 5 attempts
-        if($retry_count == $max_retries) {
-            throw new \SoapFault('Failed after 5 attempts');
-        }
-        
-        return $result;
+        return $ex;
     }
 }
