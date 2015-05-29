@@ -5,6 +5,7 @@ use DateInterval;
 use DateTime;
 use DOMDocument;
 use Pronamic\Twinfield\SoapClient;
+use SoapFault;
 use SoapHeader;
 
 /**
@@ -97,7 +98,7 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
     
     /**
      * 
-     * @param \Pronamic\Twinfield\Secure\Config $config
+     * @param Config $config
      */
     public function __construct(Config $config)
     {
