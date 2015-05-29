@@ -32,33 +32,33 @@ use SoapHeader;
 class SessionLoginHandler extends AbstractAuthenticationHandler
 {
     /**
-     * Set session timeout interval to 1 hour 55 minutes
+     * Set session timeout interval to 60 minutes
      */
-    const SESSION_TIMEOUT_INTERVAL = 'PT1H55M';
-    
+    const SESSION_TIMEOUT_INTERVAL = 'PT1H';
+
     /**
      * Fully qualified URL to the Twinfield login WSDL document
      */
     const LOGIN_WSDL_URL = 'https://login.twinfield.com/webservices/session.asmx?wsdl';
-    
+
     /**
      * URI for the processxml WSDL document on the assigned Twinfield cluster
      */
     const PROCESSXML_WSDL_URI = '/webservices/processxml.asmx?wsdl';
-    
+
     /**
      * URI for the processxml WSDL document on the assigned Twinfield cluster
      */
     const KEEPALIVE_WSDL_URI = '/webservices/session.asmx?wsdl';
-    
-    
-    
+
+
+
     /**
      *
      * @var SoapClient
      */
     protected $keepAliveSoapClient;
-    
+
     /**
      * Holds the passed in Config instance
      * 
@@ -74,7 +74,7 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
      * @var string
      */
     private $sessionID;
-    
+
     /**
      * The server cluster used for future XML
      * requests with the new SoapClient
@@ -102,9 +102,10 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
     public function __construct(Config $config)
     {
         $this->config = $config;
-        $this->keepAliveSoapClient = $this->buildSessionSoapClient();
-
+        
         parent::__construct($this->buildLoginSoapClient());
+        
+        $this->keepAliveSoapClient = $this->buildSessionSoapClient();
     }
     
     /**
@@ -182,6 +183,15 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
     }
     
     /**
+     * 
+     */
+    private function updateSessionExpiryDate()
+    {
+        $this->loginExpiry = new DateTime();
+        $this->loginExpiry->add(new DateInterval(static::SESSION_TIMEOUT_INTERVAL));
+    }
+    
+    /**
      * Will process the login.
      *
      * If successful, will set the session and cluster information
@@ -209,6 +219,7 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
         if ($this->keepAliveSoapClient !== null) {
             try {
                 $this->keepAliveSoapClient->KeepAlive();
+                $this->updateSessionExpiryDate();
 
                 return true;
             } catch (SoapFault $ex) {
@@ -246,8 +257,7 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
             $this->cluster = $cluster->item(0)->textContent;
             
             // This login object is processed!
-            $this->loginExpiry = new DateTime();
-            $this->loginExpiry->add(new DateInterval(static::SESSION_TIMEOUT_INTERVAL));
+            $this->updateSessionExpiryDate();
             
             $this->keepAliveSoapClient = $this->buildSessionSoapClient();
 
