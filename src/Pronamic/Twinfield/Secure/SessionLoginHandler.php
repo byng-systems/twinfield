@@ -37,22 +37,27 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
     const SESSION_TIMEOUT_INTERVAL = 'PT1H55M';
     
     /**
-     *
-     * @var string
+     * Fully qualified URL to the Twinfield login WSDL document
      */
-    protected $loginWSDL    = 'https://login.twinfield.com/webservices/session.asmx?wsdl';
+    const LOGIN_WSDL_URL = 'https://login.twinfield.com/webservices/session.asmx?wsdl';
+    
+    /**
+     * URI for the processxml WSDL document on the assigned Twinfield cluster
+     */
+    const PROCESSXML_WSDL_URI = '/webservices/processxml.asmx?wsdl';
+    
+    /**
+     * URI for the processxml WSDL document on the assigned Twinfield cluster
+     */
+    const KEEPALIVE_WSDL_URI = '/webservices/session.asmx?wsdl';
+    
+    
     
     /**
      *
-     * @var string
+     * @var SoapClient
      */
-    protected $clusterWSDL  = '%s/webservices/processxml.asmx?wsdl';
-    
-    /**
-     *
-     * @var string
-     */
-    protected $xmlNamespace = 'http://schemas.xmlsoap.org/soap/envelope/';
+    protected $keepAliveSoapClient;
     
     /**
      * Holds the passed in Config instance
@@ -61,15 +66,6 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
      * @var Config
      */
     protected $config;
-
-    /**
-     * The response from the login client, when
-     * successful
-     *
-     * @access private
-     * @var string
-     */
-    private $loginResponse;
 
     /**
      * The sessionID for the successful login
@@ -106,13 +102,9 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
     public function __construct(Config $config)
     {
         $this->config = $config;
+        $this->keepAliveSoapClient = $this->buildSessionSoapClient();
 
-        parent::__construct(
-            new SoapClient(
-                $this->loginWSDL,
-                array('trace' => 1)
-            )
-        );
+        parent::__construct($this->buildLoginSoapClient());
     }
     
     /**
@@ -123,7 +115,7 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
     {
         return array_diff(
             array_keys(get_object_vars($this)),
-            ['loginResponse', 'authenticationSoapClient']
+            ['authenticationSoapClient', 'keepAliveSoapClient']
         );
     }
 
@@ -132,12 +124,46 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
      */
     public function __wakeup()
     {
-        $this->authenticationSoapClient = new SoapClient(
-            $this->loginWSDL,
+        $this->authenticationSoapClient = $this->buildLoginSoapClient();
+        $this->keepAliveSoapClient = $this->buildSessionSoapClient();
+    }
+    
+    /**
+     * 
+     * @return SoapClient
+     */
+    private function buildLoginSoapClient()
+    {
+        return new SoapClient(
+            static::LOGIN_WSDL_URL,
             ['trace' => 1]
         );
     }
+    
+    /**
+     * 
+     * @return SoapClient|null
+     */
+    private function buildSessionSoapClient()
+    {
+        if ($this->isProcessed()) {
+            $soapClient = new SoapClient(
+                $this->cluster . static::KEEPALIVE_WSDL_URI,
+                ['trace' => 1]
+            );
 
+            $soapClient->__setSoapHeaders($this->getHeader());
+
+            return $soapClient;
+        }
+
+        return null;
+    }
+
+    /**
+     * 
+     * @return Config
+     */
     public function getConfig()
     {
         return $this->config;
@@ -169,10 +195,28 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
     public function process()
     {
         if ($this->isProcessed() === true) {
-            return true;
+            return $this->keepAlive();
         }
 
-        return $this->renew();
+        return $this->login();
+    }
+    
+    protected function keepAlive()
+    {
+        /*
+         * This whole class needs refactoring - this hacky internal management approach is bad
+         */
+        if ($this->keepAliveSoapClient !== null) {
+            try {
+                $this->keepAliveSoapClient->KeepAlive();
+
+                return true;
+            } catch (SoapFault $ex) {
+                return false;
+            }
+        }
+        
+        return true;
     }
     
     /**
@@ -182,19 +226,16 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
      * 
      * @return boolean
      */
-    public function renew()
+    public function login()
     {
         // Process logon
         $response = $this->authenticationSoapClient->Logon($this->config->getCredentials());
 
         // Check response is successful
         if('Ok' === $response->LogonResult) {
-            // Response from the logon request
-            $this->loginResponse = $this->authenticationSoapClient->__getLastResponse();
-
             // Make a new DOM and load the response XML
             $envelope = new DOMDocument();
-            $envelope->loadXML($this->loginResponse);
+            $envelope->loadXML($this->authenticationSoapClient->__getLastResponse());
 
             // Gets SessionID
             $sessionID       = $envelope->getElementsByTagName('SessionID');
@@ -207,6 +248,8 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
             // This login object is processed!
             $this->loginExpiry = new DateTime();
             $this->loginExpiry->add(new DateInterval(static::SESSION_TIMEOUT_INTERVAL));
+            
+            $this->keepAliveSoapClient = $this->buildSessionSoapClient();
 
             return true;
         }
@@ -250,7 +293,7 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
         $this->process();
 
         // Makes a new client, and assigns the header to it
-        $client = new SoapClient(sprintf($this->clusterWSDL, $this->cluster));
+        $client = new SoapClient($this->cluster . static::PROCESSXML_WSDL_URI);
         $client->__setSoapHeaders($this->getHeader());
 
         return $client;
