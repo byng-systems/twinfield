@@ -148,18 +148,20 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
      */
     private function buildSessionSoapClient()
     {
-        if ($this->isProcessed()) {
-            $soapClient = new SoapClient(
-                $this->cluster . static::KEEPALIVE_WSDL_URI,
-                ['trace' => 1]
-            );
+        $soapClient = new SoapClient(
+            $this->cluster . static::KEEPALIVE_WSDL_URI,
+            ['trace' => 1]
+        );
 
-            $soapClient->__setSoapHeaders($this->getHeader());
+        $soapClient->__setSoapHeaders(
+            new SoapHeader(
+                'http://www.twinfield.com/',
+                'Header',
+                ['SessionID' => $this->sessionID]
+            )
+        );
 
-            return $soapClient;
-        }
-
-        return null;
+        return $soapClient;
     }
 
     /**
@@ -224,7 +226,7 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
 
                 return true;
             } catch (SoapFault $ex) {
-                return false;
+                return $this->login();
             }
         }
         
