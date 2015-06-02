@@ -148,6 +148,10 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
      */
     private function buildSessionSoapClient()
     {
+        if (!$this->isProcessed()) {
+            return null;
+        }
+        
         $soapClient = new SoapClient(
             $this->cluster . static::KEEPALIVE_WSDL_URI,
             ['trace' => 1]
