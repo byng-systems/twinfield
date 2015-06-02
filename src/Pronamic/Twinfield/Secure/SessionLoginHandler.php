@@ -207,12 +207,13 @@ class SessionLoginHandler extends AbstractAuthenticationHandler
      * @since 0.0.1
      *
      * @access public
+     * @param boolean $keepAlive Should we force a keep-alive request?
      * @return boolean If successful or not
      */
-    public function process()
+    public function process($keepAlive = false)
     {
         if ($this->isProcessed() === true) {
-            return $this->keepAlive();
+            return ($keepAlive === false) || $this->keepAlive();
         }
 
         return $this->login();
